@@ -6,46 +6,46 @@ void OrderBook::addOrder(Order &order) {
         std::cerr << "Error: MARKETS orders can not be stocked.\n";
         return;
     }
+
+    int priceIndex = order.getPrice() - minPriceTick;
+
     // ask part
-    while (order.getSide() == SideClass::SELL && !bids.empty()
-        && order.getQuantity() > 0 && order.getPrice() <= bids.begin()->first)
+    while (order.getSide() == SideClass::SELL && bestBidPrice > -1
+        && order.getQuantity() > 0 && priceIndex <= bestBidPrice)
     {
-            Order& bestBid = bids.begin()->second.front();
+            Order& bestBid = bids[bestBidPrice].front();
             int tradeQuantity = std::min(order.getQuantity(), bestBid.getQuantity());
             order.reduceQuantity(tradeQuantity);
             bestBid.reduceQuantity(tradeQuantity);
-            std::cout << "QUANTITY = " << order.getQuantity() << "\n";
             if (bestBid.getQuantity() == 0) {
-                bids.begin()->second.pop_front();
+                bid[bestBidPrice].pop_front();
             }
-            if (bids.begin()->second.empty()) {
-                bids.erase(bids.begin());
+            if (bids[bestBidPrice].empty()) {
+                while (bestBidPrice >= 0 && bids[bestBidPrice].empty()) {
+                    bestBidPrice--;
+                }
             }
-            std::cout << "TRADE EXECUTED: [" << tradeQuantity
-            << "] @ [" << order.getPrice() << "]\n";
     }
     if (order.getSide() == SideClass::SELL && order.getQuantity() > 0) {
-        asks[order.getPrice()].push_back(order);
+        asks[priceIndex].push_back(order);
     }
     // bid part
-    while (order.getSide() == SideClass::BUY && !asks.empty()
-        && order.getQuantity() > 0 && order.getPrice() >= asks.begin()->first)
+    while (order.getSide() == SideClass::BUY && bestAskPrice < 
+        && order.getQuantity() > 0 && priceIndex >= asks[bestAskPrice - minPriceTalk]->first)
     {
-            Order& bestAsk = asks.begin()->second.front();
+            Order& bestAsk = asks[bestAskPrice]->second.front();
             int tradeQuantity = std::min(order.getQuantity(), bestAsk.getQuantity());
             order.reduceQuantity(tradeQuantity);
             bestAsk.reduceQuantity(tradeQuantity);
             if (bestAsk.getQuantity() == 0) {
-                asks.begin()->second.pop_front();
+                asks[bestAskPrice - minPriceTalk]->second.pop_front();
             }
-            if (asks.begin()->second.empty()) {
-                asks.erase(asks.begin());
+            if (asks[bestAskPrice - minPriceTalk]->second.empty()) {
+                asks.erase(asks[bestAskPrice - minPriceTalk]);
             }
-            std::cout << "TRADE EXECUTED: [" << tradeQuantity
-            << "] @ [" << order.getPrice() << "]\n";
     }
     if (order.getSide() == SideClass::BUY && order.getQuantity() > 0) {
-        bids[order.getPrice()].push_back(order);
+        bids[priceIndex].push_back(order);
     }
 }
 
